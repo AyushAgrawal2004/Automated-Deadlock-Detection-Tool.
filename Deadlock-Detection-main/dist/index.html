@@ -158,6 +158,15 @@
         }
         break;
       }
+      function resetAll() {
+        document.getElementById('numProcesses').value = "";
+        document.getElementById('numResources').value = "";
+        document.getElementById('allocationInputs').innerHTML = "";
+        document.getElementById('resourceInputs').innerHTML = "";
+        document.getElementById('outputAlert').classList.add("d-none");
+        document.getElementById('suggestion').classList.add("d-none");
+        document.getElementById('validationErrors').innerText = "";
+      }
     }
     if (!foundProcess) {
       deadlock = true;
