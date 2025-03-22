@@ -110,66 +110,61 @@
     }
 
     function detectDeadlock(resources, processes) {
-      let safeSequence = [];
-      let processQueue = Object.keys(processes);
-      let deadlock = false;
+  console.log("Starting deadlock detection...");
+  let safeSequence = [];
+  let processQueue = Object.keys(processes);
+  let deadlock = false;
 
-      while (processQueue.length > 0) {
-        let foundProcess = false;
-
-        for (let i = 0; i < processQueue.length; i++) {
-          let process = processQueue[i];
-          let canExecute = true;
-
-          for (let resource in resources) {
-            if (processes[process].allocated[resource] > resources[resource].available) {
-              canExecute = false;
-              break;
-            }
-          }
-
-          if (canExecute) {
-            safeSequence.push(process);
-            processQueue.splice(i, 1);
-            foundProcess = true;
-
-            for (let resource in resources) {
-              resources[resource].available += processes[process].allocated[resource];
-            }
-            break;
-          }
-        }
-
-        if (!foundProcess) {
-          deadlock = true;
+  while (processQueue.length > 0) {
+    let foundProcess = false;
+    console.log("Current process queue:", processQueue);
+    for (let i = 0; i < processQueue.length; i++) {
+      let process = processQueue[i];
+      let canExecute = true;
+      for (let resource in resources) {
+        if (processes[process].allocated[resource] > resources[resource].available) {
+          canExecute = false;
+          console.log(`Process ${process} cannot execute due to resource ${resource}`);
           break;
         }
       }
-
-      const outputAlert = document.getElementById('outputAlert');
-      const outputMessage = document.getElementById('outputMessage');
-      const suggestionBox = document.getElementById('suggestion');
-
-      if (deadlock) {
-        outputMessage.innerText = "Deadlock detected! System is unsafe.";
-        outputAlert.classList.remove("d-none", "alert-success");
-        outputAlert.classList.add("alert-danger");
-
-        // Suggestion logic
-        let suggestedProcess = Object.keys(processes)[0]; 
-        let suggestedResource = Object.keys(resources)[0]; 
-
-        suggestionBox.innerText = `Suggestion: Consider releasing some resources from ${suggestedProcess} or terminating ${suggestedProcess} to resolve deadlock.`;
-        suggestionBox.classList.remove("d-none");
-
-      } else {
-        outputMessage.innerText = `No Deadlock. Safe Sequence: ${safeSequence.join(" -> ")}`;
-        outputAlert.classList.remove("d-none", "alert-danger");
-        outputAlert.classList.add("alert-success");
-
-        suggestionBox.innerText = "Suggestion: The system is safe. No action needed.";
-        suggestionBox.classList.remove("d-none");
+      if (canExecute) {
+        console.log(`Process ${process} can execute. Adding to safe sequence.`);
+        safeSequence.push(process);
+        processQueue.splice(i, 1);
+        foundProcess = true;
+        for (let resource in resources) {
+          resources[resource].available += processes[process].allocated[resource];
+        }
+        break;
       }
+    }
+    if (!foundProcess) {
+      deadlock = true;
+      console.log("No process found that can execute; deadlock detected.");
+      break;
+    }
+  }
+  // Output handling as before...
+  const outputAlert = document.getElementById('outputAlert');
+  const outputMessage = document.getElementById('outputMessage');
+  const suggestionBox = document.getElementById('suggestion');
+
+  if (deadlock) {
+    outputMessage.innerText = "Deadlock detected! System is unsafe.";
+    outputAlert.classList.remove("d-none", "alert-success");
+    outputAlert.classList.add("alert-danger");
+    suggestionBox.innerText = "Suggestion: Consider releasing resources from one of the processes.";
+    suggestionBox.classList.remove("d-none");
+  } else {
+    outputMessage.innerText = `No Deadlock. Safe Sequence: ${safeSequence.join(" -> ")}`;
+    outputAlert.classList.remove("d-none", "alert-danger");
+    outputAlert.classList.add("alert-success");
+    suggestionBox.innerText = "Suggestion: The system is safe. No action needed.";
+    suggestionBox.classList.remove("d-none");
+  }
+  console.log("Deadlock detection completed.");
+}
       function resetAll() {
         document.getElementById('numProcesses').value = "";
         document.getElementById('numResources').value = "";
