@@ -20,10 +20,12 @@
     </div>
     <!-- Add these right below the number inputs in your container -->
     <div id="validationErrors" class="text-danger"></div>
+    <div id="matrixContainer" class="mt-4"></div>
 
     <div class="text-center">
       <button class="btn btn-primary me-3" onclick="setup()">Setup</button>
       <button class="btn btn-success" onclick="startDetection()">Start Detection</button>
+      <button class="btn btn-secondary" onclick="resetAll()">Reset</button>
     </div>
 
     <div class="row mt-4">
@@ -168,7 +170,42 @@
         suggestionBox.innerText = "Suggestion: The system is safe. No action needed.";
         suggestionBox.classList.remove("d-none");
       }
+      function resetAll() {
+        document.getElementById('numProcesses').value = "";
+        document.getElementById('numResources').value = "";
+        document.getElementById('allocationInputs').innerHTML = "";
+        document.getElementById('resourceInputs').innerHTML = "";
+        document.getElementById('outputAlert').classList.add("d-none");
+        document.getElementById('suggestion').classList.add("d-none");
+        document.getElementById('validationErrors').innerText = "";
+      }
     }
+    // Function to display process allocation matrix
+function displayMatrix(processes, numResources) {
+  let tableHTML = "<table class='table table-bordered'><thead><tr><th>Process</th>";
+  for (let j = 1; j <= numResources; j++) {
+    tableHTML += `<th>R${j} Allocated</th>`;
+  }
+  tableHTML += "</tr></thead><tbody>";
+
+  for (let process in processes) {
+    tableHTML += `<tr><td>${process}</td>`;
+    for (let j = 1; j <= numResources; j++) {
+      tableHTML += `<td>${processes[process].allocated[`R${j}`]}</td>`;
+    }
+    tableHTML += "</tr>";
+  }
+  tableHTML += "</tbody></table>";
+  document.getElementById('matrixContainer').innerHTML = tableHTML;
+}
+
+// Call displayMatrix() at the end of startDetection()
+function startDetection() {
+  // ... existing code to prepare resources and processes ...
+  // After calling detectDeadlock:
+  detectDeadlock(resources, processes);
+  displayMatrix(processes, numResources);
+}
   </script>
 </body>
 </html>
