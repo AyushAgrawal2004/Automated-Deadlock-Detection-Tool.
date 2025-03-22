@@ -24,6 +24,7 @@
     <div class="text-center">
       <button class="btn btn-primary me-3" onclick="setup()">Setup</button>
       <button class="btn btn-success" onclick="startDetection()">Start Detection</button>
+      <button class="btn btn-secondary" onclick="resetAll()">Reset</button>
     </div>
 
     <div class="row mt-4">
@@ -167,6 +168,15 @@
 
         suggestionBox.innerText = "Suggestion: The system is safe. No action needed.";
         suggestionBox.classList.remove("d-none");
+      }
+      function resetAll() {
+        document.getElementById('numProcesses').value = "";
+        document.getElementById('numResources').value = "";
+        document.getElementById('allocationInputs').innerHTML = "";
+        document.getElementById('resourceInputs').innerHTML = "";
+        document.getElementById('outputAlert').classList.add("d-none");
+        document.getElementById('suggestion').classList.add("d-none");
+        document.getElementById('validationErrors').innerText = "";
       }
     }
   </script>
