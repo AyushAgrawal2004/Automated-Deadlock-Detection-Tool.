@@ -18,6 +18,9 @@
       <label for="numResources" class="form-label">Number of Resources:</label>
       <input class="form-control" type="number" id="numResources" min="1">
     </div>
+    <!-- Add these right below the number inputs in your container -->
+    <div id="validationErrors" class="text-danger"></div>
+
     <div class="text-center">
       <button class="btn btn-primary me-3" onclick="setup()">Setup</button>
       <button class="btn btn-success" onclick="startDetection()">Start Detection</button>
@@ -40,11 +43,13 @@
     function setup() {
       const numProcesses = parseInt(document.getElementById('numProcesses').value);
       const numResources = parseInt(document.getElementById('numResources').value);
+      const errorBox = document.getElementById('validationErrors');
+      errorBox.innerText = ""; // clear previous errors
 
       if (isNaN(numProcesses) || isNaN(numResources) || numProcesses <= 0 || numResources <= 0) {
-        alert("Enter valid positive numbers for processes and resources.");
-        return;
-      }
+      errorBox.innerText = "Please enter valid positive numbers for processes and resources.";
+      return;
+    }
 
       let allocationInputs = '<h3>Process Allocation</h3>';
       let resourceInputs = '<h3>Available Resources</h3>';
