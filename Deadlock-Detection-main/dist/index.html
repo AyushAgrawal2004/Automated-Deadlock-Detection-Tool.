@@ -40,6 +40,23 @@
       <div id="suggestion" class="alert alert-info d-none mt-2"></div>
     </div>
   </div>
+<!-- Add this modal markup at the end of your body -->
+<div class="modal fade" id="suggestionModal" tabindex="-1" aria-labelledby="suggestionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="suggestionModalLabel">Deadlock Resolution Suggestion</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="modalSuggestionBody">
+        <!-- Suggestion will be inserted here -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
   <script>
     function setup() {
@@ -150,19 +167,24 @@
   const outputMessage = document.getElementById('outputMessage');
   const suggestionBox = document.getElementById('suggestion');
 
-  if (deadlock) {
-    outputMessage.innerText = "Deadlock detected! System is unsafe.";
-    outputAlert.classList.remove("d-none", "alert-success");
-    outputAlert.classList.add("alert-danger");
-    suggestionBox.innerText = "Suggestion: Consider releasing resources from one of the processes.";
-    suggestionBox.classList.remove("d-none");
-  } else {
-    outputMessage.innerText = `No Deadlock. Safe Sequence: ${safeSequence.join(" -> ")}`;
-    outputAlert.classList.remove("d-none", "alert-danger");
-    outputAlert.classList.add("alert-success");
-    suggestionBox.innerText = "Suggestion: The system is safe. No action needed.";
-    suggestionBox.classList.remove("d-none");
-  }
+  // Update the deadlock output section in detectDeadlock()
+if (deadlock) {
+  outputMessage.innerText = "Deadlock detected! System is unsafe.";
+  outputAlert.classList.remove("d-none", "alert-success");
+  outputAlert.classList.add("alert-danger");
+  // Set modal content and show it using Bootstrap's modal API
+  document.getElementById("modalSuggestionBody").innerText =
+    "Suggestion: Consider releasing resources from one of the processes or terminating one process to break the deadlock.";
+  var modal = new bootstrap.Modal(document.getElementById('suggestionModal'));
+  modal.show();
+} else {
+  outputMessage.innerText = `No Deadlock. Safe Sequence: ${safeSequence.join(" -> ")}`;
+  outputAlert.classList.remove("d-none", "alert-danger");
+  outputAlert.classList.add("alert-success");
+  suggestionBox.innerText = "Suggestion: The system is safe. No action needed.";
+  suggestionBox.classList.remove("d-none");
+}
+
   console.log("Deadlock detection completed.");
 }
       function resetAll() {
