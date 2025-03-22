@@ -223,6 +223,44 @@ function startDetection() {
   detectDeadlock(resources, processes);
   displayMatrix(processes, numResources);
 }
+// Add functions to save and load configuration
+function saveConfiguration() {
+  const config = {
+    numProcesses: document.getElementById('numProcesses').value,
+    numResources: document.getElementById('numResources').value,
+    allocations: {}
+  };
+  // Save each process allocation
+  for (let i = 1; i <= config.numProcesses; i++) {
+    config.allocations[`P${i}`] = {};
+    for (let j = 1; j <= config.numResources; j++) {
+      config.allocations[`P${i}`][`R${j}`] = document.getElementById(`P${i}R${j}`) ? document.getElementById(`P${i}R${j}`).value : 0;
+    }
+  }
+  localStorage.setItem('deadlockConfig', JSON.stringify(config));
+}
+
+function loadConfiguration() {
+  const config = JSON.parse(localStorage.getItem('deadlockConfig'));
+  if (config) {
+    document.getElementById('numProcesses').value = config.numProcesses;
+    document.getElementById('numResources').value = config.numResources;
+    setup(); // regenerate inputs based on these values
+    // Now load allocation values
+    for (let i = 1; i <= config.numProcesses; i++) {
+      for (let j = 1; j <= config.numResources; j++) {
+        const inputElement = document.getElementById(`P${i}R${j}`);
+        if (inputElement && config.allocations[`P${i}`]) {
+          inputElement.value = config.allocations[`P${i}`][`R${j}`] || 0;
+        }
+      }
+    }
+  }
+}
+
+// Call loadConfiguration() on page load
+window.onload = loadConfiguration;
+
   </script>
 </body>
 </html>
