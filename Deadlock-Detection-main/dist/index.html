@@ -97,38 +97,6 @@
       document.getElementById('resourceInputs').innerHTML = resourceInputs;
     }
 
-    function startDetection() {
-      const numProcesses = parseInt(document.getElementById('numProcesses').value);
-      const numResources = parseInt(document.getElementById('numResources').value);
-
-      if (isNaN(numProcesses) || isNaN(numResources) || numProcesses <= 0 || numResources <= 0) {
-        alert("Enter valid numbers for processes and resources.");
-        return;
-      }
-
-      let resources = {};
-      let processes = {};
-
-      for (let i = 1; i <= numResources; i++) {
-        resources[`R${i}`] = {
-          available: parseInt(document.getElementById(`R${i}`).value),
-          allocated: 0
-        };
-      }
-
-      for (let i = 1; i <= numProcesses; i++) {
-        processes[`P${i}`] = { max: {}, allocated: {} };
-
-        for (let j = 1; j <= numResources; j++) {
-          let allocated = parseInt(document.getElementById(`P${i}R${j}`).value);
-          processes[`P${i}`].allocated[`R${j}`] = isNaN(allocated) ? 0 : allocated;
-          processes[`P${i}`].max[`R${j}`] = processes[`P${i}`].allocated[`R${j}`] + 1;
-        }
-      }
-
-      detectDeadlock(resources, processes);
-    }
-
     function detectDeadlock(resources, processes) {
   console.log("Starting deadlock detection...");
   let safeSequence = [];
@@ -157,15 +125,6 @@
           resources[resource].available += processes[process].allocated[resource];
         }
         break;
-      }
-      function resetAll() {
-        document.getElementById('numProcesses').value = "";
-        document.getElementById('numResources').value = "";
-        document.getElementById('allocationInputs').innerHTML = "";
-        document.getElementById('resourceInputs').innerHTML = "";
-        document.getElementById('outputAlert').classList.add("d-none");
-        document.getElementById('suggestion').classList.add("d-none");
-        document.getElementById('validationErrors').innerText = "";
       }
     }
     if (!foundProcess) {
@@ -208,7 +167,7 @@ if (deadlock) {
         document.getElementById('suggestion').classList.add("d-none");
         document.getElementById('validationErrors').innerText = "";
       }
-    }
+    
     // Function to display process allocation matrix
 function displayMatrix(processes, numResources) {
   let tableHTML = "<table class='table table-bordered'><thead><tr><th>Process</th>";
@@ -230,8 +189,44 @@ function displayMatrix(processes, numResources) {
 
 // Call displayMatrix() at the end of startDetection()
 function startDetection() {
-  // ... existing code to prepare resources and processes ...
-  // After calling detectDeadlock:
+  const numProcesses = parseInt(document.getElementById('numProcesses').value);
+  const numResources = parseInt(document.getElementById('numResources').value);
+
+  if (isNaN(numProcesses) || isNaN(numResources) || numProcesses <= 0 || numResources <= 0) {
+    alert("Enter valid numbers for processes and resources.");
+    return;
+  }
+
+  let resources = {};
+  let processes = {};
+
+  for (let i = 1; i <= numResources; i++) {
+    const resourceElement = document.getElementById(`R${i}`);
+    if (!resourceElement) {
+      alert(`Resource input R${i} not found.`);
+      return;
+    }
+    resources[`R${i}`] = {
+      available: parseInt(resourceElement.value),
+      allocated: 0
+    };
+  }
+
+  for (let i = 1; i <= numProcesses; i++) {
+    processes[`P${i}`] = { max: {}, allocated: {} };
+
+    for (let j = 1; j <= numResources; j++) {
+      const processResourceElement = document.getElementById(`P${i}R${j}`);
+      if (!processResourceElement) {
+        alert(`Process resource input P${i}R${j} not found.`);
+        return;
+      }
+      let allocated = parseInt(processResourceElement.value);
+      processes[`P${i}`].allocated[`R${j}`] = isNaN(allocated) ? 0 : allocated;
+      processes[`P${i}`].max[`R${j}`] = processes[`P${i}`].allocated[`R${j}`] + 1;
+    }
+  }
+
   detectDeadlock(resources, processes);
   displayMatrix(processes, numResources);
 }
