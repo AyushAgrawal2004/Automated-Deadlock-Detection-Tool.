@@ -48,5 +48,5 @@ This project is licensed under the **MIT License**. See the `LICENSE` file for d
 
 ---
 
-Made with ❤️ by [AYUSH AGRAWAL]
+Made with ❤️ by [AYUSH AGRAWAL-12322587,UNNATI PAL-123321376,PALLAVI CHAUDHARY-12315176] 
 
