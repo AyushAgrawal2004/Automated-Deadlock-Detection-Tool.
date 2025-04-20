@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deadlock Detection</title>
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="text-end mb-3">
+    <button class="btn btn-outline-secondary" onclick="toggleTheme()">Toggle Theme</button>
+  </div>
+  <h1 class="text-center my-4">Deadlock Detection</h1>
+  <div class="container p-4 rounded bg-white shadow-lg">
+    <div class="mb-3">
+      <label for="numProcesses" class="form-label">Number of Processes:</label>
+      <input class="form-control" type="number" id="numProcesses" min="1">
+    </div>
+    <div class="mb-3">
+      <label for="numResources" class="form-label">Number of Resources:</label>
+      <input class="form-control" type="number" id="numResources" min="1">
+    </div>
+    <!-- Add these right below the number inputs in your container -->
+    <div id="validationErrors" class="text-danger"></div>
+    <div id="matrixContainer" class="mt-4"></div>
+
+    <div class="text-center">
+      <button class="btn btn-primary me-3" onclick="setup()">Setup</button>
+      <button class="btn btn-success" onclick="startDetection()">Start Detection</button>
+      <button class="btn btn-secondary" onclick="resetAll()">Reset</button>
+    </div>
+
+    <div class="row mt-4">
+      <div id="allocationInputs" class="col-md-4"></div>
+      <div id="maxInputs" class="col-md-4"></div>
+      <div id="resourceInputs" class="col-md-4"></div>
+    </div>
+
+    <div id="output" class="mt-4">
+      <div class="alert d-none" id="outputAlert">
+        <span id="outputMessage"></span>
+      </div>
+      <div id="suggestion" class="alert alert-info d-none mt-2"></div>
+    </div>
+  </div>
+<!-- Add this modal markup at the end of your body -->
+<div class="modal fade" id="suggestionModal" tabindex="-1" aria-labelledby="suggestionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="suggestionModalLabel">Deadlock Resolution Suggestion</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="modalSuggestionBody">
+        <!-- Suggestion will be inserted here -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script>
+    function setup() {
+      const numProcesses = parseInt(document.getElementById('numProcesses').value);
+      const numResources = parseInt(document.getElementById('numResources').value);
+      const errorBox = document.getElementById('validationErrors');
+      errorBox.innerText = ""; // clear previous errors
+
+      if (isNaN(numProcesses) || isNaN(numResources) || numProcesses <= 0 || numResources <= 0) {
+        errorBox.innerText = "Please enter valid positive numbers for processes and resources.";
+        return;
+      }
+
+      let allocationInputs = '<h3>Process Allocation</h3>';
+      let maxInputs = '<h3>Maximum Requirements</h3>';
+      let resourceInputs = '<h3>Available Resources</h3>';
+
+      for (let i = 1; i <= numProcesses; i++) {
+        allocationInputs += `<h5 class="mt-3">Process P${i}:</h5>`;
+        maxInputs += `<h5 class="mt-3">Process P${i}:</h5>`;
+        for (let j = 1; j <= numResources; j++) {
+          allocationInputs += `
+            <label for="P${i}R${j}" class="form-label">R${j} Allocated:</label>
+            <input class="form-control mb-2" type="number" id="P${i}R${j}" min="0" value="0">
+          `;
+          maxInputs += `
+            <label for="P${i}R${j}Max" class="form-label">R${j} Max:</label>
+            <input class="form-control mb-2" type="number" id="P${i}R${j}Max" min="0" value="0">
+          `;
+        }
+      }
+
+      for (let i = 1; i <= numResources; i++) {
+        resourceInputs += `
+          <label for="R${i}" class="form-label">R${i} Available:</label>
+          <input class="form-control mb-2" type="number" id="R${i}" min="0" value="5">
+        `;
+      }
+
+      document.getElementById('allocationInputs').innerHTML = allocationInputs;
+      document.getElementById('maxInputs').innerHTML = maxInputs;
+      document.getElementById('resourceInputs').innerHTML = resourceInputs;
+    }
+
+    function detectDeadlock(resources, processes) {
+      console.log("Starting Banker's Algorithm...");
+      let safeSequence = [];
+      let work = {};
+      let finish = {};
+      let need = {};
+
+      // Initialize work with available resources
+      for (let resource in resources) {
+        work[resource] = resources[resource].available;
+      }
+
+      // Initialize finish array and calculate need matrix
+      for (let process in processes) {
+        finish[process] = false;
+        need[process] = {};
+        for (let resource in resources) {
+          need[process][resource] = processes[process].max[resource] - processes[process].allocated[resource];
+        }
+      }
+
+      // Find a safe sequence
+      let found;
+      do {
+        found = false;
+        for (let process in processes) {
+          if (!finish[process]) {
+            let canExecute = true;
+            for (let resource in resources) {
+              if (need[process][resource] > work[resource]) {
+                canExecute = false;
+                break;
+              }
+            }
+            if (canExecute) {
+              for (let resource in resources) {
+                work[resource] += processes[process].allocated[resource];
+              }
+              finish[process] = true;
+              safeSequence.push(process);
+              found = true;
+            }
+          }
+        }
+      } while (found);
+
+      // Check if all processes are finished
+      let deadlock = false;
+      for (let process in processes) {
+        if (!finish[process]) {
+          deadlock = true;
+          break;
+        }
+      }
+
+      // Output handling
+      const outputAlert = document.getElementById('outputAlert');
+      const outputMessage = document.getElementById('outputMessage');
+      const suggestionBox = document.getElementById('suggestion');
+
+      if (deadlock) {
+        outputMessage.innerText = "Deadlock detected! System is unsafe.";
+        outputAlert.classList.remove("d-none", "alert-success");
+        outputAlert.classList.add("alert-danger");
+        document.getElementById("modalSuggestionBody").innerText =
+          "Suggestion: Consider reducing maximum resource requirements or increasing available resources to prevent deadlock.";
+        var modal = new bootstrap.Modal(document.getElementById('suggestionModal'));
+        modal.show();
+      } else {
+        outputMessage.innerText = `No Deadlock. Safe Sequence: ${safeSequence.join(" -> ")}`;
+        outputAlert.classList.remove("d-none", "alert-danger");
+        outputAlert.classList.add("alert-success");
+        suggestionBox.innerText = "Suggestion: The system is safe. No action needed.";
+        suggestionBox.classList.remove("d-none");
+      }
+    }
+
+    function resetAll() {
+      document.getElementById('numProcesses').value = "";
+      document.getElementById('numResources').value = "";
+      document.getElementById('allocationInputs').innerHTML = "";
+      document.getElementById('resourceInputs').innerHTML = "";
+      document.getElementById('outputAlert').classList.add("d-none");
+      document.getElementById('suggestion').classList.add("d-none");
+      document.getElementById('validationErrors').innerText = "";
+    }
+    
+    // Function to display process allocation matrix
+    function displayMatrix(processes, numResources) {
+      let tableHTML = "<table class='table table-bordered'><thead><tr><th>Process</th>";
+      for (let j = 1; j <= numResources; j++) {
+        tableHTML += `<th>R${j} Allocated</th>`;
+      }
+      tableHTML += "</tr></thead><tbody>";
+
+      for (let process in processes) {
+        tableHTML += `<tr><td>${process}</td>`;
+        for (let j = 1; j <= numResources; j++) {
+          tableHTML += `<td>${processes[process].allocated[`R${j}`]}</td>`;
+        }
+        tableHTML += "</tr>";
+      }
+      tableHTML += "</tbody></table>";
+      document.getElementById('matrixContainer').innerHTML = tableHTML;
+    }
+
+    function startDetection() {
+      const numProcesses = parseInt(document.getElementById('numProcesses').value);
+      const numResources = parseInt(document.getElementById('numResources').value);
+
+      if (isNaN(numProcesses) || isNaN(numResources) || numProcesses <= 0 || numResources <= 0) {
+        alert("Enter valid numbers for processes and resources.");
+        return;
+      }
+
+      let resources = {};
+      let processes = {};
+
+      for (let i = 1; i <= numResources; i++) {
+        const resourceElement = document.getElementById(`R${i}`);
+        if (!resourceElement) {
+          alert(`Resource input R${i} not found.`);
+          return;
+        }
+        resources[`R${i}`] = {
+          available: parseInt(resourceElement.value),
+          allocated: 0
+        };
+      }
+
+      for (let i = 1; i <= numProcesses; i++) {
+        processes[`P${i}`] = { max: {}, allocated: {} };
+
+        for (let j = 1; j <= numResources; j++) {
+          const processResourceElement = document.getElementById(`P${i}R${j}`);
+          const maxResourceElement = document.getElementById(`P${i}R${j}Max`);
+          if (!processResourceElement || !maxResourceElement) {
+            alert(`Process resource input not found for P${i}R${j}.`);
+            return;
+          }
+          let allocated = parseInt(processResourceElement.value);
+          let max = parseInt(maxResourceElement.value);
+          processes[`P${i}`].allocated[`R${j}`] = isNaN(allocated) ? 0 : allocated;
+          processes[`P${i}`].max[`R${j}`] = isNaN(max) ? 0 : max;
+        }
+      }
+
+      detectDeadlock(resources, processes);
+      displayMatrix(processes, numResources);
+    }
+
+    // Add functions to save and load configuration
+    function saveConfiguration() {
+      const config = {
+        numProcesses: document.getElementById('numProcesses').value,
+        numResources: document.getElementById('numResources').value,
+        allocations: {}
+      };
+      // Save each process allocation
+      for (let i = 1; i <= config.numProcesses; i++) {
+        config.allocations[`P${i}`] = {};
+        for (let j = 1; j <= config.numResources; j++) {
+          config.allocations[`P${i}`][`R${j}`] = document.getElementById(`P${i}R${j}`) ? document.getElementById(`P${i}R${j}`).value : 0;
+        }
+      }
+      localStorage.setItem('deadlockConfig', JSON.stringify(config));
+    }
+
+    function loadConfiguration() {
+      const config = JSON.parse(localStorage.getItem('deadlockConfig'));
+      if (config) {
+        document.getElementById('numProcesses').value = config.numProcesses;
+        document.getElementById('numResources').value = config.numResources;
+        setup(); // regenerate inputs based on these values
+        // Now load allocation values
+        for (let i = 1; i <= config.numProcesses; i++) {
+          for (let j = 1; j <= config.numResources; j++) {
+            const inputElement = document.getElementById(`P${i}R${j}`);
+            if (inputElement && config.allocations[`P${i}`]) {
+              inputElement.value = config.allocations[`P${i}`][`R${j}`] || 0;
+            }
+          }
+        }
+      }
+    }
+
+    // Add toggleTheme() function
+    function toggleTheme() {
+      const body = document.body;
+      const container = document.querySelector('.container');
+      const inputs = document.querySelectorAll('input, select, textarea');
+      const labels = document.querySelectorAll('label');
+      const tables = document.querySelectorAll('table');
+      
+      if (body.classList.contains('bg-light')) {
+        // Switch to dark theme
+        body.classList.remove('bg-light');
+        body.classList.add('bg-dark', 'text-white');
+        container.classList.remove('bg-white');
+        container.classList.add('bg-dark', 'text-white');
+        
+        // Update input elements
+        inputs.forEach(input => {
+          input.classList.add('bg-dark', 'text-white');
+        });
+        
+        // Update labels
+        labels.forEach(label => {
+          label.classList.add('text-white');
+        });
+        
+        // Update tables
+        tables.forEach(table => {
+          table.classList.add('text-white');
+        });
+      } else {
+        // Switch to light theme
+        body.classList.remove('bg-dark', 'text-white');
+        body.classList.add('bg-light');
+        container.classList.remove('bg-dark', 'text-white');
+        container.classList.add('bg-white');
+        
+        // Update input elements
+        inputs.forEach(input => {
+          input.classList.remove('bg-dark', 'text-white');
+        });
+        
+        // Update labels
+        labels.forEach(label => {
+          label.classList.remove('text-white');
+        });
+        
+        // Update tables
+        tables.forEach(table => {
+          table.classList.remove('text-white');
+        });
+      }
+    }
+
+    // Call loadConfiguration() on page load
+    window.onload = loadConfiguration;
+
+  </script>
+</body>
+</html>
